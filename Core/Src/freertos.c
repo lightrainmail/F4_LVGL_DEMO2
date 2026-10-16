@@ -50,31 +50,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-/* 按钮点击回调 */
-static void btn_event_cb(lv_event_t *e) {
-    if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
-        lv_obj_t *btn = lv_event_get_target(e);
-        lv_obj_t *label = lv_obj_get_child(btn, 0); // 获取按钮上的标签
-        lv_label_set_text(label, "Clicked!"); // 改变文字
-    }
-}
 
-/* 创建底部按钮，在 main 中调用一次 */
-void lv_demo_bottom_button(void) {
-    lv_obj_t *scr = lv_scr_act(); // 获取当前屏幕
-
-    lv_obj_t *btn = lv_btn_create(scr); // 创建按钮
-    lv_obj_set_size(btn, 150, 50); // 设置宽高
-    lv_obj_align(btn, LV_ALIGN_BOTTOM_MID, 0, -20); // 底部居中，离底边20像素
-
-    lv_obj_set_style_bg_color(btn, lv_color_hex(0xFF0000), 0);
-
-    lv_obj_t *label = lv_label_create(btn); // 按钮上的文字
-    lv_label_set_text(label, "Press Me");
-    lv_obj_center(label); // 文字居中
-
-    lv_obj_add_event_cb(btn, btn_event_cb, LV_EVENT_CLICKED, NULL);
-}
 /* USER CODE END Variables */
 /* Definitions for main */
 osThreadId_t mainHandle;
@@ -87,7 +63,7 @@ const osThreadAttr_t main_attributes = {
 osThreadId_t lvglHandle;
 const osThreadAttr_t lvgl_attributes = {
   .name = "lvgl",
-  .stack_size = 128 * 4,
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
 
@@ -187,7 +163,7 @@ void App_lvgl(void *argument)
     lv_port_indev_init();
 
     /* Create widgets */
-    create_button();
+    lv_obj_t * loading = ui_loading_create(lv_screen_active());
     /* 等价写法：lv_obj_align(btn, LV_ALIGN_CENTER, 0, 0); */
 
     /* Infinite loop */

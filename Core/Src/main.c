@@ -20,10 +20,11 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "dma.h"
+#include "gpio.h"
 #include "i2c.h"
 #include "spi.h"
+#include "src/tick/lv_tick.h"
 #include "usart.h"
-#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -185,9 +186,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM11)
   {
     HAL_IncTick();
+      lv_tick_inc(1);
   }
   /* USER CODE BEGIN Callback 1 */
-
   /* USER CODE END Callback 1 */
 }
 
