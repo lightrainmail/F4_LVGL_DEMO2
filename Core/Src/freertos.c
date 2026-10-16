@@ -19,9 +19,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
-#include "cmsis_os.h"
-#include "main.h"
 #include "task.h"
+#include "main.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -79,16 +79,16 @@ void lv_demo_bottom_button(void) {
 /* Definitions for main */
 osThreadId_t mainHandle;
 const osThreadAttr_t main_attributes = {
-        .name = "main",
-        .stack_size = 128 * 4,
-        .priority = (osPriority_t) osPriorityNormal,
+  .name = "main",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for lvgl */
 osThreadId_t lvglHandle;
 const osThreadAttr_t lvgl_attributes = {
-        .name = "lvgl",
-        .stack_size = 1024 * 4,
-        .priority = (osPriority_t) osPriorityLow,
+  .name = "lvgl",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -102,45 +102,46 @@ void App_lvgl(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
 void MX_FREERTOS_Init(void) {
-    /* USER CODE BEGIN Init */
+  /* USER CODE BEGIN Init */
 
-    /* USER CODE END Init */
+  /* USER CODE END Init */
 
-    /* USER CODE BEGIN RTOS_MUTEX */
+  /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
-    /* USER CODE END RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
 
-    /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
-    /* USER CODE END RTOS_SEMAPHORES */
+  /* USER CODE END RTOS_SEMAPHORES */
 
-    /* USER CODE BEGIN RTOS_TIMERS */
+  /* USER CODE BEGIN RTOS_TIMERS */
     /* start timers, add new ones, ... */
-    /* USER CODE END RTOS_TIMERS */
+  /* USER CODE END RTOS_TIMERS */
 
-    /* USER CODE BEGIN RTOS_QUEUES */
+  /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
-    /* USER CODE END RTOS_QUEUES */
+  /* USER CODE END RTOS_QUEUES */
 
-    /* Create the thread(s) */
-    /* creation of main */
-    mainHandle = osThreadNew(App_main, NULL, &main_attributes);
+  /* Create the thread(s) */
+  /* creation of main */
+  mainHandle = osThreadNew(App_main, NULL, &main_attributes);
 
-    /* creation of lvgl */
-    lvglHandle = osThreadNew(App_lvgl, NULL, &lvgl_attributes);
+  /* creation of lvgl */
+  lvglHandle = osThreadNew(App_lvgl, NULL, &lvgl_attributes);
 
-    /* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
-    /* USER CODE END RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
 
-    /* USER CODE BEGIN RTOS_EVENTS */
+  /* USER CODE BEGIN RTOS_EVENTS */
     /* add events, ... */
-    /* USER CODE END RTOS_EVENTS */
+  /* USER CODE END RTOS_EVENTS */
+
 }
 
 /* USER CODE BEGIN Header_App_main */
@@ -150,14 +151,15 @@ void MX_FREERTOS_Init(void) {
  * @retval None
  */
 /* USER CODE END Header_App_main */
-void App_main(void *argument) {
-    /* USER CODE BEGIN App_main */
+void App_main(void *argument)
+{
+  /* USER CODE BEGIN App_main */
 
     /* Infinite loop */
     for (;;) {
         osDelay(1);
     }
-    /* USER CODE END App_main */
+  /* USER CODE END App_main */
 }
 
 /* USER CODE BEGIN Header_App_lvgl */
@@ -167,8 +169,9 @@ void App_main(void *argument) {
  * @retval None
  */
 /* USER CODE END Header_App_lvgl */
-void App_lvgl(void *argument) {
-    /* USER CODE BEGIN App_lvgl */
+void App_lvgl(void *argument)
+{
+  /* USER CODE BEGIN App_lvgl */
     LCD_Init();
 
     // 1.调用lv_init
@@ -192,10 +195,11 @@ void App_lvgl(void *argument) {
         uint32_t tick = lv_timer_handler();
         vTaskDelay(tick);
     }
-    /* USER CODE END App_lvgl */
+  /* USER CODE END App_lvgl */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
+
