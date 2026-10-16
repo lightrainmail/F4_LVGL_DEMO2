@@ -49,6 +49,7 @@ add_subdirectory(cmake/stm32cubemx)
 
 file(GLOB LCD_SRC ${CMAKE_CURRENT_SOURCE_DIR}/BSP/LCD/Src/*.c)
 file(GLOB TOUCH_SRC ${CMAKE_CURRENT_SOURCE_DIR}/BSP/TOUCH/Src/*.c)
+file(GLOB W28Q128_SRC ${CMAKE_CURRENT_SOURCE_DIR}/BSP/W25Q128/Src/*.c)
 file(GLOB_RECURSE LVGL_SRC ${CMAKE_CURRENT_SOURCE_DIR}/lvgl/src/*.c)
 file(GLOB_RECURSE LVGL_PORT_SRC ${CMAKE_CURRENT_SOURCE_DIR}/lvgl/porting/*.c)
 file(GLOB_RECURSE LVGL_UI_SRC ${CMAKE_CURRENT_SOURCE_DIR}/lvgl/App_UI/Src/*.c)
@@ -63,6 +64,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
         ${LCD_SRC}
         ${TOUCH_SRC}
+        ${W28Q128_SRC}
         ${LVGL_SRC}
         ${LVGL_PORT_SRC}
         ${LVGL_UI_SRC}
@@ -73,6 +75,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
         BSP/LCD/Inc
         BSP/TOUCH/Inc
+        BSP/W25Q128/Inc
         lvgl
         lvgl/App_UI/Inc
 )
