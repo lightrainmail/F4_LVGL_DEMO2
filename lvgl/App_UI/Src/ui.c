@@ -3,53 +3,80 @@
 //
 #include "ui.h"
 
+#include "lvgl.h"
 
-static void button_event_cb(lv_event_t * e)
+static uint32_t click_count = 0;
+
+static void test_button_event_cb(lv_event_t *e)
 {
-    if(lv_event_get_code(e) == LV_EVENT_CLICKED) {
-        LV_LOG_USER("Clicked");
+    static uint32_t offset = 0;
+
+    lv_obj_t *label = lv_event_get_user_data(e);
+    uint8_t data[256];
+    uint32_t address = 0xFFF000UL + offset;
+
+    if (!w25q128_read(address, data, sizeof(data))) {
+        lv_label_set_text_fmt(
+            label,
+            "Read Failed\nAddr: %06lX",
+            (unsigned long)address);
+        return;
+    }
+
+    for (uint32_t i = 0; i < sizeof(data); ++i) {
+        if (data[i] != 0xFFU) {
+            lv_label_set_text_fmt(
+                label,
+                "Not FF\nAddr: %06lX\nData: %02X",
+                (unsigned long)(address + i),
+                (unsigned int)data[i]);
+            return;
+        }
+    }
+
+    offset += sizeof(data);
+
+    if (offset >= W25Q128_SECTOR_SIZE) {
+        lv_label_set_text(label,
+                          "Check PASS\n4096 bytes = FF");
+        offset = 0;
+    } else {
+        lv_label_set_text_fmt(
+            label,
+            "Block OK\nChecked: %lu / 4096",
+            (unsigned long)offset);
     }
 }
 
-void create_button(void)
+/* 创建测试界面：初始化完成后调用一次 */
+void ui_button_test_create(void)
 {
-    /* 在当前屏幕上创建按钮 */
-    lv_obj_t * btn = lv_button_create(lv_screen_active());
-    lv_obj_set_size(btn, 120, 50);
-    lv_obj_center(btn);
+    lv_obj_t *screen = lv_screen_active();
 
-    /* 添加按钮文字 */
-    lv_obj_t * label = lv_label_create(btn);
-    lv_label_set_text(label, "Click me");
-    lv_obj_center(label);
+    click_count = 0;
 
-    /* 注册点击事件 */
-    lv_obj_add_event_cb(btn, button_event_cb, LV_EVENT_CLICKED, NULL);
-}
+    /* 创建计数标签 */
+    lv_obj_t *count_label = lv_label_create(screen);
 
+    lv_label_set_text(count_label, "Count: 0");
+    lv_obj_align(count_label, LV_ALIGN_CENTER, 0, -50);
 
-lv_obj_t * ui_loading_create(lv_obj_t * parent)
-{
-    lv_obj_t * spinner = lv_spinner_create(parent);
+    /* 创建按钮：LVGL V9 使用 lv_button_create */
+    lv_obj_t *button = lv_button_create(screen);
 
-    /* 大小、位置 */
-    lv_obj_set_size(spinner, 60, 60);
-    lv_obj_center(spinner);
+    lv_obj_set_size(button, 140, 60);
+    lv_obj_align(button, LV_ALIGN_CENTER, 0, 30);
 
-    /* 动画周期 1000 ms，弧长参数 90° */
-    lv_spinner_set_anim_params(spinner, 1000, 90);
+    /* 创建按钮文字 */
+    lv_obj_t *button_label = lv_label_create(button);
 
-    /* 底圈：深灰色 */
-    lv_obj_set_style_arc_color(
-        spinner, lv_color_hex(0x333333), LV_PART_MAIN);
-    lv_obj_set_style_arc_width(spinner, 6, LV_PART_MAIN);
+    lv_label_set_text(button_label, "Click Me");
+    lv_obj_center(button_label);
 
-    /* 旋转弧：蓝色、圆角 */
-    lv_obj_set_style_arc_color(
-        spinner, lv_color_hex(0x2196F3), LV_PART_INDICATOR);
-    lv_obj_set_style_arc_width(spinner, 6, LV_PART_INDICATOR);
-    lv_obj_set_style_arc_rounded(
-        spinner, true, LV_PART_INDICATOR);
-
-    return spinner;
+    /* 注册点击事件，把计数标签作为用户数据传入 */
+    lv_obj_add_event_cb(
+        button,
+        test_button_event_cb,
+        LV_EVENT_CLICKED,
+        count_label);
 }

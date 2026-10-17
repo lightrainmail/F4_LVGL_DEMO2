@@ -47,7 +47,9 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+#define FLASH_TEST_ADDRESS  0xFFF000UL
+uint8_t data[256];
+uint8_t sr1 = 0;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -167,31 +169,7 @@ void App_lvgl(void *argument)
     /* Create widgets */
     w25q128_init();
 
-    uint8_t data[8] = {0};
-
-    lv_obj_t *label = lv_label_create(lv_screen_active());
-
-    if (w25q128_read(0x000000U, data, sizeof(data))) {
-        lv_label_set_text_fmt(
-            label,
-            "Address: 000000\n"
-            "%02X %02X %02X %02X\n"
-            "%02X %02X %02X %02X",
-            (unsigned int)data[0],
-            (unsigned int)data[1],
-            (unsigned int)data[2],
-            (unsigned int)data[3],
-            (unsigned int)data[4],
-            (unsigned int)data[5],
-            (unsigned int)data[6],
-            (unsigned int)data[7]);
-    } else {
-        lv_label_set_text(label, "Flash Read Failed");
-    }
-
-    lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_center(label);
-
+   ui_button_test_create();
 
     /* Infinite loop */
     for (;;) {

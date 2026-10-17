@@ -177,7 +177,7 @@ bool w25q128_read(uint32_t address,uint8_t *buffer,uint32_t length) {
     }
 
     //用减法检查范围，避免address + length 溢出，别读到芯片外面去了
-    if (address >= W25Q128_CAPACITY_BYTES - length) {
+    if (length > (W25Q128_CAPACITY_BYTES - address)) {
         return false;
     }
 
@@ -225,3 +225,72 @@ bool w25q128_read(uint32_t address,uint8_t *buffer,uint32_t length) {
 
     return ok;
 }
+
+/*
+ * @brief 擦除一个扇区，一个扇区4KiB
+ * @param address,地址必须是扇区起始地址，4096U的整数倍，例如0x000000U 0x001000U 0x002000U 0xFFF000
+ */
+bool w25q128_erase_sector(uint32_t address) {
+    uint8_t discard;
+    bool ok;
+
+    //检查地址范围
+    if (address >= W25Q128_CAPACITY_BYTES) {
+        return false;
+    }
+
+    //要求去4KiB对齐
+    if ((address % W25Q128_SECTOR_SIZE) != 0U) {
+        return false;
+    }
+
+    //写使能，这个函数内部已经有等待空闲的函数,并检查SR1的WEL位是否为1
+    if (!w25q128_write_enable()) {
+        return false;
+    }
+
+    //拉低CS，通讯开始
+    flash_cs(false);
+
+    //发送扇区擦除指令
+    ok = flash_spi_xfer(W25Q128_CMD_SECTOR_ERASE,&discard);
+
+    //发送地址，从高8位开始
+    if (ok) {
+        ok = flash_spi_xfer((uint8_t)((address >> 16) & 0xFFU),&discard);
+    }
+
+    //中间8位
+    if (ok) {
+        ok = flash_spi_xfer((uint8_t)((address >> 8) & 0xFFU),&discard);
+    }
+
+    //低8位
+    if (ok) {
+        ok = flash_spi_xfer((uint8_t)(address & 0xFFU),&discard);
+    }
+
+    //释放CS，结束通讯
+    flash_cs(true);
+
+    if (!ok) {
+        return false;
+    }
+
+    //等待空闲，并设置3秒的等待时间
+    return w25q128_wait_ready(5000U);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

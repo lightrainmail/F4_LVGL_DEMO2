@@ -45,4 +45,10 @@ bool w25q128_write_disable(void);
  */
 bool w25q128_read(uint32_t address,uint8_t *buffer,uint32_t length);
 
+/*
+ * @brief 擦除一个扇区，一个扇区4KiB
+ * @param address,地址必须是扇区起始地址，4096U的整数倍，例如0x000000U 0x001000U 0x002000U 0xFFF000
+ */
+bool w25q128_erase_sector(uint32_t address);
+
 #endif //F4_LVGL_DEMO2_W25Q128_H

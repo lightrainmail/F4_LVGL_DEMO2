@@ -6,9 +6,10 @@
 #define F4_LVGL_DEMO2_UI_H
 
 #include "lvgl.h"
+#include "w25q128.h"
+#include "w25q128_defs.h"
 
-void create_button(void);
-
-lv_obj_t * ui_loading_create(lv_obj_t * parent);
+/* 创建测试界面：初始化完成后调用一次 */
+void ui_button_test_create(void);
 
 #endif // F4_LVGL_DEMO2_UI_H
