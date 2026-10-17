@@ -6,6 +6,7 @@
 #define F4_LVGL_DEMO2_W25Q128_H
 
 #include "w25q128_port.h"
+#include "w25q128_defs.h"
 
 /*
  * @brief 读取器件ID

@@ -17,7 +17,7 @@ bool w25q128_read_jedec_id(uint8_t id[3]) {
     //拉低CS
     flash_cs(false);
 
-    ok = flash_spi_xfer(0x9F,&discard);
+    ok = flash_spi_xfer(W25Q128_CMD_JEDEC_ID,&discard);
 
     //前一次接收成功，才会进行下次接收
     for(uint8_t i  = 0; i < 3 && ok;++i) {

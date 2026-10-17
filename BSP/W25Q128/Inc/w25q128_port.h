@@ -9,6 +9,7 @@
 #include "stdio.h"
 #include "stdbool.h"
 #include "spi.h"
+#include "w25q128_defs.h"
 
 //CS引脚定义
 #define FLASH_CS_Port   GPIOB
