@@ -35,10 +35,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include <string.h>
 #include "ff_gen_drv.h"
+#include "flash_storage.h"
+#include <stddef.h>
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-
+#define FLASH_DISK_SECTOR_SIZE 4096UL
+#define FLASH_DISK_SECTOR_COUNT 4094UL //最后两个扇区用来测试，不交给文件系统
 /* Private variables ---------------------------------------------------------*/
 /* Disk status */
 static volatile DSTATUS Stat = STA_NOINIT;
@@ -81,7 +84,22 @@ DSTATUS USER_initialize (
 )
 {
   /* USER CODE BEGIN INIT */
+    if (pdrv != 0U) {
+        return STA_NOINIT;
+    }
+
     Stat = STA_NOINIT;
+
+    /* 通过带锁接口试读一个字节 */
+    uint8_t data;
+
+    if (!flash_read(0U,&data,1U)) {
+        return Stat;
+    }
+
+    /* 读取成功，不要求data是什么值 */
+    Stat = 0;
+
     return Stat;
   /* USER CODE END INIT */
 }
@@ -96,7 +114,9 @@ DSTATUS USER_status (
 )
 {
   /* USER CODE BEGIN STATUS */
-    Stat = STA_NOINIT;
+   if (pdrv != 0U) {
+       return STA_NOINIT;
+   }
     return Stat;
   /* USER CODE END STATUS */
 }
@@ -117,6 +137,33 @@ DRESULT USER_read (
 )
 {
   /* USER CODE BEGIN READ */
+    uint32_t address;
+    uint32_t length;
+
+    if (pdrv != 0U || buff == NULL || count == 0 ) {
+        return RES_PARERR;
+    }
+
+    if ((Stat & STA_NODISK) != 0U) {
+        return RES_NOTRDY;
+    }
+
+    /*先检查范围，在做乘法*/
+    if (sector >= FLASH_DISK_SECTOR_COUNT) {
+        return RES_PARERR;
+    }
+
+    if (count > (FLASH_DISK_SECTOR_COUNT - sector)) {
+        return RES_PARERR;
+    }
+
+    address = sector * FLASH_DISK_SECTOR_SIZE;
+    length = count * FLASH_DISK_SECTOR_SIZE;
+
+    if (!flash_read(address,buff,length)) {
+        return RES_ERROR;
+    }
+
     return RES_OK;
   /* USER CODE END READ */
 }
@@ -138,6 +185,31 @@ DRESULT USER_write (
 )
 {
   /* USER CODE BEGIN WRITE */
+    uint32_t address;
+    uint32_t length;
+
+    if (pdrv != 0U || buff == NULL || count == 0 ) {
+        return RES_PARERR;
+    }
+
+    if ((Stat & STA_NOINIT) != 0U) {
+        return RES_NOTRDY;
+    }
+
+    if (sector >= FLASH_DISK_SECTOR_COUNT) {
+        return RES_PARERR;
+    }
+
+    if (count > (FLASH_DISK_SECTOR_COUNT - sector)) {
+        return RES_PARERR;
+    }
+
+    address = sector * FLASH_DISK_SECTOR_SIZE;
+    length = count * FLASH_DISK_SECTOR_SIZE;
+
+    if (!flash_update(address,buff,length)) {
+        return RES_ERROR;
+    }
   /* USER CODE HERE */
     return RES_OK;
   /* USER CODE END WRITE */
@@ -159,6 +231,52 @@ DRESULT USER_ioctl (
 )
 {
   /* USER CODE BEGIN IOCTL */
+    if (pdrv != 0U) {
+        return RES_PARERR;
+    }
+
+    if ((Stat & STA_NODISK) != 0U) {
+        return RES_NOTRDY;
+    }
+
+    switch (cmd) {
+        case CTRL_SYNC: {
+            /*
+             * 当前flash_update()等待内部编程完成之后才返回
+             * 没有等待写回的缓存
+             */
+            return RES_OK;
+        }
+        case GET_SECTOR_COUNT: {
+            if (buff == NULL) {
+                return RES_PARERR;
+            }
+
+            *(DWORD*)buff = FLASH_DISK_SECTOR_COUNT;
+            return RES_OK;
+        }
+        case GET_SECTOR_SIZE: {
+            if (buff == NULL) {
+                return RES_PARERR;
+            }
+
+            *(WORD*)buff = FLASH_DISK_SECTOR_SIZE;
+            return RES_OK;
+        }
+        case GET_BLOCK_SIZE: {
+            if (buff == NULL) {
+                return RES_PARERR;
+            }
+
+            /*一个擦除单元包含一个逻辑扇区*/
+            *(DWORD*)buff = 1UL;
+            return RES_OK;
+        }
+        default: {
+            return RES_PARERR;
+        }
+    }
+
     DRESULT res = RES_ERROR;
     return res;
   /* USER CODE END IOCTL */

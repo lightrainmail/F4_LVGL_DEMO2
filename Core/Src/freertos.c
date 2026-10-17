@@ -34,6 +34,7 @@
 #include "ui.h"
 #include "w25q128.h"
 #include "w25q128_port.h"
+#include "test.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -140,9 +141,8 @@ void App_main(void *argument)
     }
 
     /* 可在调试器中查看 */
-    volatile uint8_t storage_test_result = 0xFFU;
-
-    storage_test_result = flash_storage_test();
+    // flash_file_test();
+    flash_file_read_only_test();
     /* Infinite loop */
     for (;;) {
 

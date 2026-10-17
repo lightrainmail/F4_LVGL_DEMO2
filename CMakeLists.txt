@@ -68,6 +68,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${LVGL_SRC}
         ${LVGL_PORT_SRC}
         ${LVGL_UI_SRC}
+        Core/Src/test.c
 )
 
 # Add include paths
