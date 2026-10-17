@@ -281,6 +281,62 @@ bool w25q128_erase_sector(uint32_t address) {
     return w25q128_wait_ready(5000U);
 }
 
+/*
+ * @brief 页编程
+ */
+bool w25q128_page_program(uint32_t address,const uint8_t *data,uint32_t length) {
+    uint8_t discard;
+    bool ok;
+
+    if (address >= W25Q128_CAPACITY_BYTES) {
+        return false;
+    }
+
+    if (length == 0U || data == NULL) {
+        return false;
+    }
+
+    /*检查是否超出跨越页边界 这一步计算address到页的末尾还有多少长度*/
+    uint32_t page_remaining = W25Q128_PAGE_SIZE - (address % W25Q128_SECTOR_SIZE);
+
+    if (length > page_remaining) {
+        return false;
+    }
+
+    if (!w25q128_write_enable()) {
+        return false;
+    }
+
+    flash_cs(false);
+
+    ok = flash_spi_xfer(W25Q128_CMD_PAGE_PROGRAM,&discard);
+
+    if (ok) {
+        ok = flash_spi_xfer((uint8_t)((address >> 16) & 0xFFU),&discard);
+    }
+
+    if (ok) {
+        ok = flash_spi_xfer((uint8_t)((address >> 8) & 0xFFU),&discard);
+    }
+
+    if (ok) {
+        ok = flash_spi_xfer((uint8_t)(address & 0xFFU),&discard);
+    }
+
+    for (uint32_t i = 0; i < length && ok; i++) {
+        ok = flash_spi_xfer(data[i],&discard);
+    }
+
+    //释放CS，SPI通讯结束，W25Q128正式写入数据
+    flash_cs(true);
+
+    if (!ok) {
+        return false;
+    }
+
+    return w25q128_wait_ready(100U);
+}
+
 
 
 

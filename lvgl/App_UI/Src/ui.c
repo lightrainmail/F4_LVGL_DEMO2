@@ -9,42 +9,50 @@ static uint32_t click_count = 0;
 
 static void test_button_event_cb(lv_event_t *e)
 {
-    static uint32_t offset = 0;
+    static bool attempted = false;
 
     lv_obj_t *label = lv_event_get_user_data(e);
-    uint8_t data[256];
-    uint32_t address = 0xFFF000UL + offset;
 
-    if (!w25q128_read(address, data, sizeof(data))) {
-        lv_label_set_text_fmt(
-            label,
-            "Read Failed\nAddr: %06lX",
-            (unsigned long)address);
+    uint8_t tx[4] = {0x12, 0x34, 0x56, 0x78};
+    uint8_t rx[4] = {0};
+
+    /* 本次运行只尝试写入一次 */
+    if (attempted) {
         return;
     }
 
-    for (uint32_t i = 0; i < sizeof(data); ++i) {
-        if (data[i] != 0xFFU) {
-            lv_label_set_text_fmt(
-                label,
-                "Not FF\nAddr: %06lX\nData: %02X",
-                (unsigned long)(address + i),
-                (unsigned int)data[i]);
-            return;
+    attempted = true;
+
+    if (!w25q128_page_program(0xFFF000UL, tx, sizeof(tx))) {
+        lv_label_set_text(label, "Program Failed");
+        return;
+    }
+
+    if (!w25q128_read(0xFFF000UL, rx, sizeof(rx))) {
+        lv_label_set_text(label, "Read Failed");
+        return;
+    }
+
+    bool match = true;
+
+    for (uint32_t i = 0; i < sizeof(tx); ++i) {
+        if (rx[i] != tx[i]) {
+            match = false;
+            break;
         }
     }
 
-    offset += sizeof(data);
-
-    if (offset >= W25Q128_SECTOR_SIZE) {
+    if (match) {
         lv_label_set_text(label,
-                          "Check PASS\n4096 bytes = FF");
-        offset = 0;
+                          "Program PASS\n12 34 56 78");
     } else {
         lv_label_set_text_fmt(
             label,
-            "Block OK\nChecked: %lu / 4096",
-            (unsigned long)offset);
+            "Verify Failed\n%02X %02X %02X %02X",
+            (unsigned int)rx[0],
+            (unsigned int)rx[1],
+            (unsigned int)rx[2],
+            (unsigned int)rx[3]);
     }
 }
 

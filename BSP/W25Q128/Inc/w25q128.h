@@ -51,4 +51,9 @@ bool w25q128_read(uint32_t address,uint8_t *buffer,uint32_t length);
  */
 bool w25q128_erase_sector(uint32_t address);
 
+/*
+ * @brief 页编程
+ */
+bool w25q128_page_program(uint32_t address,const uint8_t *data,uint32_t length);
+
 #endif //F4_LVGL_DEMO2_W25Q128_H
