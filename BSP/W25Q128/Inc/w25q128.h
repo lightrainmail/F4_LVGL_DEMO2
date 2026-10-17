@@ -56,4 +56,10 @@ bool w25q128_erase_sector(uint32_t address);
  */
 bool w25q128_page_program(uint32_t address,const uint8_t *data,uint32_t length);
 
+/*
+ * @brief 写入自动分页
+ */
+bool w25q128_program(uint32_t address,const uint8_t *data,uint32_t length);
+
+
 #endif //F4_LVGL_DEMO2_W25Q128_H

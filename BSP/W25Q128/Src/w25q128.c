@@ -297,7 +297,7 @@ bool w25q128_page_program(uint32_t address,const uint8_t *data,uint32_t length) 
     }
 
     /*检查是否超出跨越页边界 这一步计算address到页的末尾还有多少长度*/
-    uint32_t page_remaining = W25Q128_PAGE_SIZE - (address % W25Q128_SECTOR_SIZE);
+    uint32_t page_remaining = W25Q128_PAGE_SIZE - (address % W25Q128_PAGE_SIZE);
 
     if (length > page_remaining) {
         return false;
@@ -337,7 +337,52 @@ bool w25q128_page_program(uint32_t address,const uint8_t *data,uint32_t length) 
     return w25q128_wait_ready(100U);
 }
 
+/*
+ * @brief 写入自动分页
+ */
+bool w25q128_program(uint32_t address,const uint8_t *data,uint32_t length) {
+    uint32_t page_remaining;
+    uint32_t write_length;
 
+    if (address >= W25Q128_CAPACITY_BYTES) {
+        return false;
+    }
+
+    if (length > (W25Q128_CAPACITY_BYTES - address)) {
+        return false;
+    }
+
+    if (length == 0U) {
+        return false;
+    }
+
+    if (data == NULL) {
+        return false;
+    }
+
+    while (length > 0U) {
+        /*当前页还能写多少字节*/
+        page_remaining = W25Q128_PAGE_SIZE - (address % W25Q128_PAGE_SIZE);
+
+        /* 默认写完剩余数据 */
+        write_length = length;
+
+        /* 当超过当前页容量时，只写到页末尾 */
+        if (write_length > page_remaining) {
+            write_length = page_remaining;
+        }
+
+        if (!w25q128_page_program(address,data,write_length)) {
+            return false;
+        }
+
+        /* 移动到下一段 */
+        address += write_length;    //Flash 地址向后移动
+        data += write_length;       //数据指针向后移动
+        length -= write_length;     //剩余长度减少
+    }
+    return true;
+}
 
 
 

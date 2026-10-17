@@ -9,50 +9,67 @@ static uint32_t click_count = 0;
 
 static void test_button_event_cb(lv_event_t *e)
 {
-    static bool attempted = false;
+    static uint8_t step = 0;
+
+    static uint8_t tx[300];
+    static uint8_t rx[300];
+
+    const uint32_t address = 0xFFF0F0UL;
 
     lv_obj_t *label = lv_event_get_user_data(e);
 
-    uint8_t tx[4] = {0x12, 0x34, 0x56, 0x78};
-    uint8_t rx[4] = {0};
-
-    /* 本次运行只尝试写入一次 */
-    if (attempted) {
-        return;
-    }
-
-    attempted = true;
-
-    if (!w25q128_page_program(0xFFF000UL, tx, sizeof(tx))) {
-        lv_label_set_text(label, "Program Failed");
-        return;
-    }
-
-    if (!w25q128_read(0xFFF000UL, rx, sizeof(rx))) {
-        lv_label_set_text(label, "Read Failed");
-        return;
-    }
-
-    bool match = true;
-
-    for (uint32_t i = 0; i < sizeof(tx); ++i) {
-        if (rx[i] != tx[i]) {
-            match = false;
-            break;
+    /* 第一次点击：生成数据并写入 */
+    if (step == 0U) {
+        for (uint32_t i = 0; i < sizeof(tx); ++i) {
+            tx[i] = (uint8_t)i;
         }
+
+        /* 先标记结束，防止失败后重复编程 */
+        step = 2U;
+
+        if (!w25q128_program(address, tx, sizeof(tx))) {
+            lv_label_set_text(label, "Program Failed");
+            return;
+        }
+
+        step = 1U;
+
+        lv_label_set_text(label,
+                          "Program Done\n"
+                          "Click to verify");
+        return;
     }
 
-    if (match) {
+    /* 第二次点击：读回并比较 */
+    if (step == 1U) {
+        if (!w25q128_read(address, rx, sizeof(rx))) {
+            lv_label_set_text(label,
+                              "Read Failed\n"
+                              "Click to retry");
+            return;
+        }
+
+        for (uint32_t i = 0; i < sizeof(tx); ++i) {
+            if (rx[i] != tx[i]) {
+                lv_label_set_text_fmt(
+                    label,
+                    "Verify Failed\n"
+                    "Offset: %lu\n"
+                    "TX: %02X RX: %02X",
+                    (unsigned long)i,
+                    (unsigned int)tx[i],
+                    (unsigned int)rx[i]);
+
+                step = 2U;
+                return;
+            }
+        }
+
+        step = 2U;
+
         lv_label_set_text(label,
-                          "Program PASS\n12 34 56 78");
-    } else {
-        lv_label_set_text_fmt(
-            label,
-            "Verify Failed\n%02X %02X %02X %02X",
-            (unsigned int)rx[0],
-            (unsigned int)rx[1],
-            (unsigned int)rx[2],
-            (unsigned int)rx[3]);
+                          "Cross Page PASS\n"
+                          "300 bytes matched");
     }
 }
 
