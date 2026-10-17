@@ -165,36 +165,33 @@ void App_lvgl(void *argument)
     lv_port_indev_init();
 
     /* Create widgets */
-    uint8_t id[3] = {0};
+    w25q128_init();
 
-    flash_cs_pin_init();
+    uint8_t data[8] = {0};
 
-    /* 在当前屏幕上创建一个标签 */
     lv_obj_t *label = lv_label_create(lv_screen_active());
 
-    if (w25q128_read_jedec_id(id)) {
-        /* 将三个字节转换成十六进制文本 */
-        lv_label_set_text_fmt(label,
-                              "Flash ID:\n%02X %02X %02X",
-                              (unsigned int)id[0],
-                              (unsigned int)id[1],
-                              (unsigned int)id[2]);
+    if (w25q128_read(0x000000U, data, sizeof(data))) {
+        lv_label_set_text_fmt(
+            label,
+            "Address: 000000\n"
+            "%02X %02X %02X %02X\n"
+            "%02X %02X %02X %02X",
+            (unsigned int)data[0],
+            (unsigned int)data[1],
+            (unsigned int)data[2],
+            (unsigned int)data[3],
+            (unsigned int)data[4],
+            (unsigned int)data[5],
+            (unsigned int)data[6],
+            (unsigned int)data[7]);
     } else {
-        lv_label_set_text(label, "Flash SPI Error");
+        lv_label_set_text(label, "Flash Read Failed");
     }
 
-    /* 设置文字颜色 */
-    lv_obj_set_style_text_color(label, lv_color_hex(0xFFFFFF), 0);
-
-    /* 设置文字区域背景，保证文字清晰 */
-    lv_obj_set_style_bg_color(label, lv_color_hex(0x000000), 0);
-    lv_obj_set_style_bg_opa(label, LV_OPA_COVER, 0);
-
-    /* 多行文字居中 */
     lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
-
-    /* 标签在屏幕中央 */
     lv_obj_center(label);
+
 
     /* Infinite loop */
     for (;;) {
