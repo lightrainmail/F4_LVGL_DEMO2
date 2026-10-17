@@ -7,6 +7,7 @@
 
 #include "w25q128_port.h"
 #include "w25q128_defs.h"
+#include "string.h"
 
 /*
  * @brief w25q128 初始化函数
@@ -60,6 +61,11 @@ bool w25q128_page_program(uint32_t address,const uint8_t *data,uint32_t length);
  * @brief 写入自动分页
  */
 bool w25q128_program(uint32_t address,const uint8_t *data,uint32_t length);
+
+/*
+ * @brief 任意地址更新，并保留同一扇区的其他数据
+ */
+bool w25q128_update(uint32_t address,const uint8_t *data,uint32_t length);
 
 
 #endif //F4_LVGL_DEMO2_W25Q128_H

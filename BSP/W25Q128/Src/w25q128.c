@@ -384,8 +384,74 @@ bool w25q128_program(uint32_t address,const uint8_t *data,uint32_t length) {
     return true;
 }
 
+/*
+ * @brief 任意地址更新，并保留同一扇区的其他数据
+ */
+static uint8_t sector_buffer[W25Q128_SECTOR_SIZE];
 
+bool w25q128_update(uint32_t address,const uint8_t *data,uint32_t length) {
+    uint32_t sector_address;
+    uint32_t sector_offset;
+    uint32_t update_length;
 
+    if (address >= W25Q128_CAPACITY_BYTES) {
+        return false;
+    }
+
+    if (length > (W25Q128_CAPACITY_BYTES - address)) {
+        return false;
+    }
+
+    if (length == 0U) {
+        return false;
+    }
+
+    if (data == NULL) {
+        return false;
+    }
+
+    while (length > 0U) {
+        /* 计算当前地址在扇区内的偏移 */
+        sector_offset = address % W25Q128_SECTOR_SIZE;
+
+        /* 计算当前扇区的起始地址 */
+        sector_address = address - sector_offset;
+
+        /* 计算当前扇区还能容纳的数据长度 */
+        update_length = W25Q128_SECTOR_SIZE - sector_offset;
+
+        if (update_length > length) {
+            update_length = length;
+        }
+
+        /*将整个扇区的数据读到RAM中*/
+        if (!w25q128_read(sector_address,sector_buffer,W25Q128_SECTOR_SIZE)) {
+            return false;
+        }
+
+        /* 新旧数据比较，相同就跳过 memcpy(*data1,*data2,length)用于比较两组数据是否不相同，相同返回0;不相同返回1 */
+        if (memcmp(&sector_buffer[sector_offset],data,update_length) != 0) {
+            /* 只更改缓存中的目标区域 */
+            memcpy(&sector_buffer[sector_offset],data,update_length);
+
+            //擦除整个扇区
+            if (!w25q128_erase_sector(sector_address)) {
+                return false;
+            }
+
+            /*自动分页写回整个扇区*/
+            if (!w25q128_program(sector_address,sector_buffer,W25Q128_SECTOR_SIZE)) {
+                return false;
+            }
+        }
+
+        address += update_length;
+        data += update_length;
+        length -= update_length;
+    }
+
+    return true;
+}
 
 
 

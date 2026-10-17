@@ -48,8 +48,7 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 #define FLASH_TEST_ADDRESS  0xFFF000UL
-uint8_t data[256];
-uint8_t sr1 = 0;
+flash_update_test_result_t result;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -169,7 +168,7 @@ void App_lvgl(void *argument)
     /* Create widgets */
     w25q128_init();
 
-   ui_button_test_create();
+    result = flash_update_test();
 
     /* Infinite loop */
     for (;;) {
