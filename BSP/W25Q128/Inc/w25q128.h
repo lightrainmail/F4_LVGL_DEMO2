@@ -8,6 +8,8 @@
 #include "w25q128_port.h"
 #include "w25q128_defs.h"
 #include "string.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 /*
  * @brief w25q128 初始化函数

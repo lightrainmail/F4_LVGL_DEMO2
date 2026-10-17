@@ -71,9 +71,7 @@ bool w25q128_read_sr1(uint8_t *sr1) {
  */
 bool w25q128_wait_ready(uint32_t timeout) {
     uint8_t sr1;
-    uint32_t start_tick;
-
-    start_tick = HAL_GetTick();
+    uint32_t start_tick= HAL_GetTick();
 
     while (1) {
         if (!w25q128_read_sr1(&sr1)) {
@@ -88,6 +86,9 @@ bool w25q128_wait_ready(uint32_t timeout) {
         if ((uint32_t)(HAL_GetTick() - start_tick) > timeout) {
             return false;
         }
+
+        /* 芯片仍忙，让当前任务阻塞1个系统Tick */
+        vTaskDelay(1);
     }
 }
 

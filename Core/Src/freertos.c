@@ -25,6 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "flash_storage.h"
 #include "lcd.h"
 #include "lcd_init.h"
 #include "lv_port_indev.h"
@@ -48,7 +49,6 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 #define FLASH_TEST_ADDRESS  0xFFF000UL
-flash_update_test_result_t result;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -133,10 +133,20 @@ void MX_FREERTOS_Init(void) {
 void App_main(void *argument)
 {
   /* USER CODE BEGIN App_main */
+    w25q128_init();
 
+    if (!flash_storage_init()) {
+        Error_Handler();
+    }
+
+    /* 可在调试器中查看 */
+    volatile uint8_t storage_test_result = 0xFFU;
+
+    storage_test_result = flash_storage_test();
     /* Infinite loop */
     for (;;) {
-        osDelay(1);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
   /* USER CODE END App_main */
 }
@@ -166,9 +176,6 @@ void App_lvgl(void *argument)
     lv_port_indev_init();
 
     /* Create widgets */
-    w25q128_init();
-
-    result = flash_update_test();
 
     /* Infinite loop */
     for (;;) {

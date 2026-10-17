@@ -2,13 +2,8 @@
 // Created by LightRain on 2026/10/13.
 //
 #include "ui.h"
-
 #include "lvgl.h"
-
-/* 校验失败时，在调试器中查看这三个变量 */
-uint32_t flash_test_bad_address;
-uint8_t flash_test_expected_value;
-uint8_t flash_test_actual_value;
+#include "flash_storage.h"
 
 static uint32_t click_count = 0;
 
@@ -111,80 +106,73 @@ void ui_button_test_create(void)
         count_label);
 }
 
-flash_update_test_result_t flash_update_test(void)
+/*
+ * 返回值：
+ * 0：测试通过
+ * 1：擦除失败
+ * 2：写入失败
+ * 3：首次读取失败
+ * 4：首次比较不一致
+ * 5：更新失败
+ * 6：更新后读取失败
+ * 7：更新后比较不一致
+ */
+uint8_t flash_storage_test(void)
 {
+    const uint32_t address = 0xFFF000UL;
+
+    uint8_t original[8] = {
+        0x11, 0x22, 0x00, 0x00,
+        0x55, 0x66, 0x77, 0x88
+    };
+
     uint8_t new_data[2] = {0xFF, 0xFF};
 
-    flash_test_bad_address = 0;
-    flash_test_expected_value = 0;
-    flash_test_actual_value = 0;
+    uint8_t expected[8] = {
+        0x11, 0x22, 0xFF, 0xFF,
+        0x55, 0x66, 0x77, 0x88
+    };
 
-    /* 1. 生成整个扇区的测试数据 */
-    for (uint32_t i = 0; i < W25Q128_SECTOR_SIZE; ++i) {
-        test_expected[i] = (uint8_t)i;
+    uint8_t actual[8];
+
+    /* 1. 擦除 */
+    if (!flash_erase_sector(address)) {
+        return 1U;
     }
 
-    /* 目标位置明确设为 00，之后测试更新成 FF */
-    test_expected[16] = 0x00;
-    test_expected[17] = 0x00;
-
-    /* 2. 擦除测试扇区 */
-    if (!w25q128_erase_sector(FLASH_TEST_ADDRESS)) {
-        return FLASH_UPDATE_TEST_ERASE_FAILED;
+    /* 2. 写入原始数据 */
+    if (!flash_program(address, original, sizeof(original))) {
+        return 2U;
     }
 
-    /* 3. 写入原始测试数据 */
-    if (!w25q128_program(FLASH_TEST_ADDRESS,
-                         test_expected,
-                         W25Q128_SECTOR_SIZE)) {
-        return FLASH_UPDATE_TEST_PROGRAM_FAILED;
+    /* 3. 读取原始数据 */
+    if (!flash_read(address, actual, sizeof(actual))) {
+        return 3U;
     }
 
-    /* 4. 先确认原始数据确实写对了 */
-    if (!w25q128_read(FLASH_TEST_ADDRESS,
-                      test_actual,
-                      W25Q128_SECTOR_SIZE)) {
-        return FLASH_UPDATE_TEST_INITIAL_READ_FAILED;
-    }
-
-    for (uint32_t i = 0; i < W25Q128_SECTOR_SIZE; ++i) {
-        if (test_actual[i] != test_expected[i]) {
-            flash_test_bad_address = FLASH_TEST_ADDRESS + i;
-            flash_test_expected_value = test_expected[i];
-            flash_test_actual_value = test_actual[i];
-
-            return FLASH_UPDATE_TEST_INITIAL_MISMATCH;
+    /* 4. 比较原始数据 */
+    for (uint32_t i = 0; i < sizeof(actual); ++i) {
+        if (actual[i] != original[i]) {
+            return 4U;
         }
     }
 
-    /* 5. 只更新偏移 16、17 的两个字节 */
-    if (!w25q128_update(FLASH_TEST_ADDRESS + 16U,
-                        new_data,
-                        sizeof(new_data))) {
-        return FLASH_UPDATE_TEST_UPDATE_FAILED;
+    /* 5. 更新偏移 2、3 的两个字节 */
+    if (!flash_update(address + 2U, new_data, sizeof(new_data))) {
+        return 5U;
     }
 
-    /* 修改期望结果，其余字节保持原值 */
-    test_expected[16] = 0xFF;
-    test_expected[17] = 0xFF;
-
-    /* 6. 重新读回整个扇区 */
-    if (!w25q128_read(FLASH_TEST_ADDRESS,
-                      test_actual,
-                      W25Q128_SECTOR_SIZE)) {
-        return FLASH_UPDATE_TEST_FINAL_READ_FAILED;
+    /* 6. 再次读取 */
+    if (!flash_read(address, actual, sizeof(actual))) {
+        return 6U;
     }
 
-    /* 7. 比较全部 4096 字节 */
-    for (uint32_t i = 0; i < W25Q128_SECTOR_SIZE; ++i) {
-        if (test_actual[i] != test_expected[i]) {
-            flash_test_bad_address = FLASH_TEST_ADDRESS + i;
-            flash_test_expected_value = test_expected[i];
-            flash_test_actual_value = test_actual[i];
-
-            return FLASH_UPDATE_TEST_FINAL_MISMATCH;
+    /* 7. 确认更新成功，且相邻数据保持不变 */
+    for (uint32_t i = 0; i < sizeof(actual); ++i) {
+        if (actual[i] != expected[i]) {
+            return 7U;
         }
     }
 
-    return FLASH_UPDATE_TEST_PASS;
+    return 0U;
 }
